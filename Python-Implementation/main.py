@@ -13,7 +13,7 @@ class Emulator():
         self.pixels = [0] * (64 * 32)
         self.screen = pygame.display.set_mode((self.width * self.widthScaleFactor, self.height * self.heightScaleFactor), pygame.NOFRAME)
         pygame.mixer.init()
-        pygame.mixer.music.load("Sound.mp3")
+        pygame.mixer.music.load("../Sound/Sound.mp3")
 
         self.mem = [0x0] * 0x1000
         self.stack = []
