@@ -68,7 +68,8 @@ class Emulator():
 
             for col in range(0, width):
                 if sprite & 0x80 > 0:
-                   if self.SetPixel(self.variables[x] + col, self.variables[y] + row) == 0:
+                    #print(hex(x) + ", " + hex(y))
+                    if self.SetPixel(self.variables[x] + col, self.variables[y] + row) == 0:
                        self.variables[0xF] = 1
                    #will update the pixel on screen
 
@@ -82,6 +83,8 @@ class Emulator():
         n = _opcode & 0x000F
         x = (_opcode & 0x0F00) >> 8
         y = (_opcode & 0x00F0) >> 4
+
+        print(hex(x) + ", " + hex(y))
 
         if _opcode == 0x00E0:
             self.pixels = [0] * (64 * 32)
@@ -264,6 +267,8 @@ class Emulator():
         elif y < 0:
             y = self.height - 1
 
+        #print(str(x) + ", " + str(y))
+
         pixelLoc = x + (y * self.width)
         self.pixels[pixelLoc] ^= 1
 
@@ -280,7 +285,7 @@ class Emulator():
                 pygame.draw.rect(self.screen, (255, 255, 255), pygame.Rect(x * self.widthScaleFactor, y * self.heightScaleFactor, 1 * self.widthScaleFactor, 1 * self.heightScaleFactor))
 
         #draw a debugging grid
-        #self.RenderGrid()
+        self.RenderGrid()
 
     def Cycle(self):
         speed = 1

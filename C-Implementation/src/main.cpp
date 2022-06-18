@@ -1,8 +1,14 @@
 #include <iostream>
+#include <time.h>
+#include <stdlib.h>
+#include <Emulator.hpp>
 
 int main(){
 
-    std::cout << "Hello world" << std::endl;
-    std::cin.get();
+    srand(time(NULL));
+    Emulator emu = Emulator("");
+    emu.Run();
+
     return 0;
 }
+
