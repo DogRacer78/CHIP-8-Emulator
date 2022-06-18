@@ -32,6 +32,7 @@ class Emulator():
     def LoadProgramIntoMemory(self, program):
         for i in range(0, len(program)):
             self.mem[0x200 + i] = program[i]
+        print(self.mem)
 
     def LoadFile(self, fname):
         data = open(fname, 'rb').read()
@@ -84,7 +85,8 @@ class Emulator():
         x = (_opcode & 0x0F00) >> 8
         y = (_opcode & 0x00F0) >> 4
 
-        print(hex(x) + ", " + hex(y))
+        #print(hex(x) + ", " + hex(y))
+        print("PC *************************** " + str(self.pc))
 
         if _opcode == 0x00E0:
             self.pixels = [0] * (64 * 32)
@@ -93,58 +95,74 @@ class Emulator():
 
         elif first == 0x1000:
             self.pc = nnn
+            print("1000")
 
         elif first == 0x6000:
             self.variables[x] = nn
+            print("6000")
 
         elif first == 0xA000:
             self.indexReg = nnn
+            print("A000")
 
         elif first == 0xD000:
             #print("drawing")
             self.Draw(_opcode, x, y)
+            print("D000")
             #draw the pixels
 
         elif first == 0x2000:
             self.stack.append(self.pc)
             self.pc = nnn
+            print("2000")
+            #print("PC *************************** " + str(self.pc))
         
         elif _opcode == 0x00EE:
             self.pc = self.stack[-1]
             del self.stack[-1]
+            print("00EE")
 
         elif first == 0x3000:
             if self.variables[x] == nn:
                 self.pc += 2
+            print("3000")
 
         elif first == 0x4000:
             if self.variables[x] != nn:
                 self.pc += 2
+            print("4000")
         
         elif first == 0x5000:
             if self.variables[x] == self.variables[y]:
                 self.pc += 2
+            print("5000")
         
         elif first == 0x9000:
             if self.variables[x] != self.variables[y]:
                 self.pc += 2
+            print("9000")
 
         elif first == 0x7000:
             self.variables[x] += (_opcode & 0xFF)
             self.variables[x] &= 0xFF
+            print("7000")
 
         elif first == 0x8000:
             if n == 0x0:
                 self.variables[x] = self.variables[y]
+                print("8000")
             
             elif n == 0x1:
                 self.variables[x] |= self.variables[y]
+                print("8001")
 
             elif n == 0x2:
                 self.variables[x] &= self.variables[y]
+                print("8002")
 
             elif n == 0x3:
                 self.variables[x] ^= self.variables[y]
+                print("8003")
 
             elif n == 0x0004:
                 self.variables[x] += self.variables[y]
@@ -154,6 +172,7 @@ class Emulator():
                     self.variables[0xF] = 0
 
                 self.variables[x] = self.variables[x] & 0xFF
+                print("8004")
 
             elif n == 0x0005:
                 if self.variables[x] > self.variables[y]:
@@ -163,6 +182,7 @@ class Emulator():
 
                 self.variables[x] = self.variables[x] - self.variables[y]
                 self.variables[x] = self.variables[x] & 0xFF
+                print("8005")
 
             elif n == 0x0007:
                 if self.variables[y] > self.variables[x]:
@@ -173,6 +193,8 @@ class Emulator():
                 self.variables[x] = self.variables[y] - self.variables[x]
                 self.variables[x] = self.variables[x] & 0xFF
 
+                print("8007")
+
             elif n == 0x0006:
                 #old implementation
                 #self.variables[x] = self.variables[y]
@@ -182,6 +204,8 @@ class Emulator():
 
                 self.variables[x] >>= 1
 
+                print("8006")
+
             elif n == 0xE:
                 #old implementation
                 #self.variables[x] = self.variables[y]
@@ -189,9 +213,7 @@ class Emulator():
 
                 self.variables[0xF] = ((self.variables[x] & 0x80) >> 7)
                 self.variables[x] <<= 1
-
-        elif first == 0xA000:
-            self.indexReg = nnn
+                print("800E")
 
         elif first == 0xB000:
             #old implementation
@@ -199,10 +221,12 @@ class Emulator():
             ####
 
             self.pc = nnn + self.variables[x]
+            print("B000")
 
         elif first == 0xC000:
             num = random.randrange(0, 256)
             self.variables[x] = num & nn
+            print("C000")
 
         elif first == 0xE000:
             if nn == 0x009E:
@@ -215,15 +239,19 @@ class Emulator():
         elif first == 0xF000:
             if nn == 0x07:
                 self.variables[x] = self.delayTimer
+                print("F007")
             
             elif nn == 0x15:
                 self.delayTimer = self.variables[x]
+                print("F015")
 
             elif nn == 0x18:
                 self.soundTimer = self.variables[x]
+                print("F018")
 
             elif nn == 0x1E:
                 self.indexReg += self.variables[x]
+                print("F01E")
                 #check this one
 
             elif nn == 0x0A:
@@ -231,9 +259,11 @@ class Emulator():
                     self.pc -= 2
                 else:
                     self.variables[x] = list(self.keysPressed.keys())[list(self.keysPressed.values()).index(1)]
+                #print("F00A")
 
             elif nn == 0x29:
                 self.indexReg = self.variables[x] + self.variables[x] * 4
+                print("F029")
 
             elif nn == 0x33:
                 num = self.variables[x]
@@ -245,13 +275,17 @@ class Emulator():
                 self.mem[self.indexReg + 1] = tenths
                 self.mem[self.indexReg + 2] = ones
 
+                print("F033")
+
             elif nn == 0x55:
                 for i in range(0, x + 1):
                     self.mem[self.indexReg + i] = self.variables[i]
+                print("F055")
 
             elif nn == 0x65:
                 for i in range(0, x + 1):
                     self.variables[i] = self.mem[self.indexReg + i]
+                print("F065")
 
 
         

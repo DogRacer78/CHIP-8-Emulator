@@ -6,9 +6,8 @@
 int main(){
 
     srand(time(NULL));
-    Emulator emu = Emulator("");
+    Emulator emu = Emulator("../../ROMS/TETRIS");
     emu.Run();
 
     return 0;
 }
-

@@ -23,8 +23,9 @@ class Emulator{
         //need to do screen stuff
 
         uint8_t mem[4096]{};
-        std::vector<uint16_t> stack{};
-        uint16_t indexReg{};
+        uint16_t stack[16];
+        uint8_t sp = 0x00;
+        uint16_t indexReg = 0x0000;
         uint8_t variables[16]{};
         uint16_t pc = 0x200;
         uint16_t opcode;

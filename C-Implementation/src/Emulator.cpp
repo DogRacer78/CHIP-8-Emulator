@@ -4,6 +4,7 @@
 #include <fstream>
 #include <raylib.h>
 #include <iostream>
+#include <vector>
 
 Emulator::Emulator(const char *fname){
     //placing font in memory
@@ -33,7 +34,7 @@ Emulator::Emulator(const char *fname){
 void Emulator::Cycle(){
     int speed = 10;
     for (int i = 0; i < speed; i++){
-        opcode = (mem[pc] << 8u) | mem[pc + 1];
+        opcode = ((mem[pc] << 8u) | mem[pc + 1]);
         pc += 2;
         Execute();
     }
@@ -55,68 +56,83 @@ void Emulator::Execute(){
     uint8_t x = (opcode & 0x0F00u) >> 8u;
     uint8_t y = (opcode & 0x00F0u) >> 4u;
 
-    std::cout << std::hex << (int)x << ", " << (int)y << std:: endl;
+    //std::cout << std::dec << "PC ******************************************* " << pc << std::endl;
+    //std::cout << std::hex << "FIRST " << first << std::endl; 
 
-    if (first == 0xE000){
+    if (first == 0xE0){
         for (int i = 0; i < 2048; i++){
             pixels[i] = false;
         }
         ClearBackground(BLACK);
+        std::cout << "Clear screen" << std::endl;
     }
     else if (first == 0x1000){
         pc = nnn;
+        std::cout << "1NNN" << std::endl;
     }
 
     else if (first == 0x6000){
         variables[x] = nn;
+        std::cout << "6NNN" << std::endl;
     }
     
     else if (first == 0xA000){
         indexReg = nnn;
+        std::cout << "AX" << std::endl;
     }
 
     else if (first == 0xD000){
         //draw instructio
         Draw(x, y);
+        std::cout << "DxyN" << std::endl;
     }
 
     else if (first == 0x2000){
-        stack.push_back((uint16_t)pc);
+        stack[sp] = pc;
+        ++sp;
+        pc = nnn;
+        std::cout << "2NNN" << std::endl;
+        //std::cout << "PC ******************************************* " << pc << std::endl; 
     }
 
-    else if (first == 0xEE){
-        if (!stack.empty()){
-            pc = (int)stack.back();
-            stack.pop_back();
-        }
+    else if (first == 0x0000){
+        --sp;
+        pc = stack[sp];
+        std::cout << "00EE" << std::endl;
     }
 
     else if (first == 0x3000){
         if (variables[x] == nn){
             pc += 2;
         }
+        std::cout << "3NNN" << std::endl;
     }
 
     else if (first == 0x4000){
         if (variables[x] != nn){
             pc += 2;
         }
+        std::cout << "4NNN" << std::endl;
     }
 
     else if (first == 0x5000){
         if (variables[x] == variables[y]){
             pc += 2;
         }
+        std::cout << "5NNN" << std::endl;
     }
 
     else if (first == 0x9000){
         if (variables[x] != variables[y]){
             pc += 2;
         }
+        std::cout << "9NNN" << std::endl;
     }
 
     else if (first == 0x7000){
         variables[x] += nn;
+        //variables[x] &= 0xFF;
+        std::cout << "7NNN" << std::endl;
     }
 
     else if (first == 0x8000){
@@ -124,18 +140,22 @@ void Emulator::Execute(){
         {
         case 0x0:
             variables[x] = variables[y];
+            std::cout << "8000" << std::endl;
             break;
 
         case 0x1:
             variables[x] |= variables[y];
+            std::cout << "8001" << std::endl;
             break;
 
         case 0x2:
             variables[x] &= variables[y];
+            std::cout << "8002" << std::endl;
             break;
 
         case 0x3:
             variables[x] ^= variables[y];
+            std::cout << "8003" << std::endl;
             break;
 
         case 0x4:
@@ -149,6 +169,7 @@ void Emulator::Execute(){
             }
 
             variables[x] = sum & 0xFF;
+            std::cout << "8004" << std::endl;
         }
             break;
 
@@ -161,6 +182,7 @@ void Emulator::Execute(){
             }
 
             variables[x] = variables[x] - variables[y];
+            std::cout << "8005" << std::endl;
             break;
 
         case 0x7:
@@ -172,16 +194,19 @@ void Emulator::Execute(){
             }
 
             variables[x] = variables[y] - variables[x];
+            std::cout << "8007" << std::endl;
             break;
 
         case 0x6:
             variables[0xF] = (variables[x] & 0x1);
             variables[x] >>= 1;
+            std::cout << "8006" << std::endl;
             break;
         
         case 0xE:
             variables[0xF] = ((variables[x] & 0x80) >> 7);
             variables[x] <<= 1;
+            std::cout << "800E" << std::endl;
             break;
         
         default:
@@ -189,17 +214,15 @@ void Emulator::Execute(){
         }
     }
 
-    else if (first == 0xA000){
-        indexReg = nnn;
-    }
-
     else if (first == 0xB000){
-        pc = nnn + variables[x];
+        pc = nnn + variables[0];
+        std::cout << "B000" << std::endl;
     }
 
     else if (first == 0xC000){
         uint8_t num = (rand() % 256);
         variables[x] = num & nn;
+        std::cout << "C000" << std::endl;
     }
 
     else if (first == 0xE000){
@@ -221,29 +244,34 @@ void Emulator::Execute(){
     else if (first == 0xF000){
         switch (nn)
         {
-        case 0x7:
+        case 0x07:
             variables[x] = delayTimer;
+            std::cout << "F007" << std::endl;
             break;
 
         case 0x15:
             delayTimer = variables[x];
+            std::cout << "F015" << std::endl;
             break;
 
         case 0x18:
             soundTimer = variables[x];
+            std::cout << "F018" << std::endl;
             break;
 
         case 0x1E:
             indexReg += variables[x];
+            std::cout << "F01E" << std::endl;
             break;
 
-        case 0xA:
+        case 0x0A:
             //key code
             break;
 
         case 0x29:
             //font
             indexReg = variables[x] + (variables[x] * 4);
+            std::cout << "F029" << std::endl;
             break;
 
         case 0x33:
@@ -253,22 +281,33 @@ void Emulator::Execute(){
             uint8_t tenths = (uint8_t)(((num - ones) / 10) % 10);
             uint8_t hundreths = (uint8_t)((num - ones - (tenths * 10)) / 100);
 
-            mem[indexReg] = hundreths;
-            mem[indexReg + 1] = tenths;
-            mem[indexReg + 2] = ones;
+            //mem[indexReg] = hundreths;
+            //mem[indexReg + 1] = tenths;
+            //mem[indexReg + 2] = ones;
+
+            mem[indexReg + 2] = num % 10;
+            num /= 10;
+
+            mem[indexReg + 1] = num % 10;
+            num /= 10;
+
+            mem[indexReg] = num % 10;
+            std::cout << "F033" << std::endl;
         }
             break;
 
         case 0x55:
-            for (int i = 0; i < x + 1; i++){
+            for (int i = 0; i <= x; i++){
                 mem[indexReg + i] = variables[i];
             }
+            std::cout << "F055" << std::endl;
             break;
 
         case 0x65:
-            for (int i = 0; i < x + 1; i++){
+            for (int i = 0; i <= x; i++){
                 variables[i] = mem[indexReg + i];
             }
+            std::cout << "F065" << std::endl;
             break;
         
         default:
@@ -293,8 +332,6 @@ bool Emulator::SetPixel(int x, int y){
         y = height - 1;
     }
 
-    //std::cout << std::dec << x << ", " << y << std::endl;
-
     int pixelLoc = x + (y * width);
     pixels[pixelLoc] ^= 1;
 
@@ -309,14 +346,9 @@ void Emulator::Render(){
         int x = i % width;
         int y = floor(i / width);
 
-        //std::cout << std::dec << xa << ", " << ya << std::endl;
-
         if (pixels[i] == 1){
             //draw pixels to the screen
-            //DrawPixel(x * widthScaleFactor, y * heightScaleFactor, WHITE);
             DrawRectangle(x * widthScaleFactor, y * heightScaleFactor, 1 * widthScaleFactor, 1 * heightScaleFactor, WHITE);
-            //std::cout << std::dec << "Drawing at: " << x << ", " << y << std::endl;
-            //std::cout << "Printing" << std::endl;
         }
     }
 }
@@ -329,12 +361,8 @@ void Emulator::Draw(uint8_t x, uint8_t y){
     for (int row = 0; row < spriteHeight; row++){
         uint8_t sprite = mem[indexReg + row];
 
-        //not this
-        //std::cout << std::hex << (int)sprite << std::endl;
-
         for (int col = 0; col < spriteWidth; col++){
             if ((sprite & 0x80) > 0){
-                //std::cout << std::hex << (int)x << ", " << (int)y << std::endl;
                 if (SetPixel(variables[x] + col, variables[y] + row) == 0){
                     variables[0xF] = 1;
                 }
@@ -347,7 +375,7 @@ void Emulator::Draw(uint8_t x, uint8_t y){
 void Emulator::LoadFile(){
     //for loading the file will need to be different for the microcontroller flash
 
-    std::ifstream file("../../ROMS/IBM Logo.ch8", std::ios::binary | std::ios::ate);
+    std::ifstream file(rom, std::ios::binary | std::ios::ate);
 
     if (file.is_open()){
         std::streampos size = file.tellg();
@@ -360,6 +388,8 @@ void Emulator::LoadFile(){
         for (long i = 0; i < size; i++){
             mem[0x200 + i] =  buffer[i];
         }
+
+        delete[] buffer;
     }
 }
 
@@ -367,25 +397,17 @@ void Emulator::Run(){
     float interval = 1.0f / (float)fps;
     float timer = 0.0;
 
-    //SetTargetFPS(60);
+    SetTargetFPS(60);
 
-    //PrintMem();
-
-    //std::cout << "Before loop" << std::endl;
     while (!WindowShouldClose()){
         timer += GetFrameTime();
 
         BeginDrawing();
 
-        //std::cout << timer << std::endl;
-
         if (timer > interval){
-            //std::cout << "In interval loop" << std::endl;
 
             Cycle();
             Render();
-
-            //PrintPixels();
 
             timer = 0.0f;
         }
@@ -396,7 +418,7 @@ void Emulator::Run(){
 
 void Emulator::PrintMem(){
     for (int i = 0; i < 4096; i++){
-        std::cout << std::hex << (int)mem[i] << ", ";
+        std::cout << (int)mem[i] << ", ";
     }
 }
 
