@@ -1,6 +1,9 @@
 #include <iostream>
 #include <time.h>
 #include <stdlib.h>
+#define ARDUINO
+//define WINDOWS
+
 #include <Emulator.hpp>
 
 int main(){

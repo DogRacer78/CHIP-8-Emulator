@@ -32,7 +32,8 @@ class Emulator():
     def LoadProgramIntoMemory(self, program):
         for i in range(0, len(program)):
             self.mem[0x200 + i] = program[i]
-        print(self.mem)
+            print(hex(self.mem[0x200 + i]))
+        #print(hex(self.mem))
 
     def LoadFile(self, fname):
         data = open(fname, 'rb').read()

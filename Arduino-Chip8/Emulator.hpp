@@ -2,6 +2,12 @@
 //#include <vector>
 #ifndef MyClass_h
 #define MyClass_h
+#include <Arduino.h>
+#include <SPI.h>
+#include <Wire.h>
+
+#include <Adafruit_GFX.h> // The graphics library
+#include <Adafruit_SH110X.h>  // The driver for the specific OLED display
 // code goes here
 
 class Emulator{
@@ -20,13 +26,7 @@ class Emulator{
 
     private:
         int width = 64, height = 32;
-        #ifdef WINDOWS
-        int widthScaleFactor = 10, heightScaleFactor = 10;
-        #endif
-
-        #ifdef ARDUINO
         int widthScaleFactor = 2, heightScaleFactor = 2;
-        #endif
 
         bool pixels[32 * 64];
 
@@ -48,12 +48,14 @@ class Emulator{
 
         //screen related
         int fps = 60;
-        float interval = 1.0f / (float)fps;
-        float timer = 0.0f;
+        float interval = 1000.0f / (float)fps;
+        unsigned long timer = 0.0;
+        unsigned long start = 0.0;
+        unsigned long current;
 
-        #ifdef ARDUINO
-        Adafruit_SH1106G display = Adafruit_SH1106G(width * widthScaleFactor, height * heightScaleFactor, &Wire, -1);
-        #endif
+        Adafruit_SH1106G* display;
+
+        
 
         uint8_t font[80] = 
         {

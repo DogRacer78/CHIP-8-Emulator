@@ -1,22 +1,19 @@
-//#include <Emulator.hpp>
-//#include <stdlib.h>
-#include <math.h>
-//#include <fstream>
-//#include <vector>
-#include <C:/Users/doggi/Documents/CHIP-8 Stuff/CHIP8_Emulator/C-Implementation/include/Emulator.hpp>
+//#include <math.h>
+#include "Emulator.hpp"
+#include <Fs.h>
+#include <Arduino.h>
+#include <SPI.h>
+#include <Wire.h>
 
-#ifdef WINDOWS
-    #include <raylib.h>
-    #include <iostream>
-#endif
-
+#include <Adafruit_GFX.h> // The graphics library
+#include <Adafruit_SH110X.h>  // The driver for the specific OLED display
 
 Emulator::Emulator(const char *fname){
     //placing font in memory
+
     for (int i = 0; i < 4096; i++){
         mem[i] = 0x00;   
     }
-
 
     for (int i = 0; i < 80; i++){
         mem[i] = font[i];
@@ -30,24 +27,30 @@ Emulator::Emulator(const char *fname){
         variables[i] = 0x0;
     }
 
-    rom = fname;
-    #ifdef WINDOWS
-    InitWindow(width * widthScaleFactor, height * heightScaleFactor, "CHIP-8");
-    LoadFile();
-    PrintMem();
-    #endif
+    display = new Adafruit_SH1106G((uint16_t)128, (uint16_t)64, &Wire, -1);
 
-    #ifdef MYARDUINO
+    rom = fname;
+    Serial.println("BEFORE FILE READ");
+    //File file = SPIFFS.open("/IBM Logo.ch8", "r");
+    //Serial.println(file.size());
     ReadArduinoFile();
-    #endif
+    Serial.println("Finished reading program");
+    PrintMem();
+
+    display->begin(0x3C, true);
+    start = millis();
     
 }
 
 void Emulator::Cycle(){
     int speed = 10;
+    //Serial.println("IN CYCLE");
     for (int i = 0; i < speed; i++){
-        opcode = ((mem[pc] << 8u) | mem[pc + 1]);
-        pc += 2;
+        opcode = ((mem[pc] << 8u) | mem[pc + (uint16_t)1]);
+        Serial.print("PC IS: ");
+        Serial.println(pc, HEX);
+        pc += (uint16_t)2;
+
         Execute();
     }
 
@@ -58,6 +61,7 @@ void Emulator::Cycle(){
     if (soundTimer > 0){
         soundTimer -= 1;
     }
+    //Serial.println("AFTER CYCLE");
 }
 
 void Emulator::Execute(){
@@ -70,83 +74,105 @@ void Emulator::Execute(){
 
     //std::cout << std::dec << "PC ******************************************* " << pc << std::endl;
     //std::cout << std::hex << "FIRST " << first << std::endl; 
+    Serial.print("****************************** ");
+    Serial.println(pc, HEX);
 
-    if (first == 0xE0){
+    Serial.print("OPCODE :");
+    Serial.println(opcode, HEX);
+
+    Serial.print("FIRST: ");
+    Serial.println(first, HEX);
+
+    Serial.print("nnn: ");
+    Serial.println(nnn, HEX);
+
+    Serial.print("nn: ");
+    Serial.println(nn, HEX);
+
+    Serial.print("n: ");
+    Serial.println(n, HEX);
+
+    Serial.print("x: ");
+    Serial.println(x, HEX);
+
+    Serial.print("y: ");
+    Serial.println(y, HEX);
+
+    if (opcode == 0xE0){
         for (int i = 0; i < 2048; i++){
             pixels[i] = false;
         }
-        #ifdef WINDOWS
-        ClearBackground(BLACK);
-        #endif
+        display->clearDisplay();
+        display->display();
         //std::cout << "Clear screen" << std::endl;
+        Serial.println("Clear Screen");
     }
     else if (first == 0x1000){
         pc = nnn;
-        //std::cout << "1NNN" << std::endl;
+        Serial.println("1000");
     }
 
     else if (first == 0x6000){
         variables[x] = nn;
-        //std::cout << "6NNN" << std::endl;
+        Serial.println("6000");
     }
     
     else if (first == 0xA000){
         indexReg = nnn;
-        //std::cout << "AX" << std::endl;
+        Serial.println("A000");
     }
 
     else if (first == 0xD000){
         //draw instructio
         Draw(x, y);
-        //std::cout << "DxyN" << std::endl;
+        Serial.println("D000");
     }
 
     else if (first == 0x2000){
         stack[sp] = pc;
         ++sp;
         pc = nnn;
-        //std::cout << "2NNN" << std::endl;
-        //std::cout << "PC ******************************************* " << pc << std::endl; 
+        Serial.println("2000");
     }
 
     else if (first == 0x0000){
         --sp;
         pc = stack[sp];
-        //std::cout << "00EE" << std::endl;
+        Serial.println("00EE");
     }
 
     else if (first == 0x3000){
         if (variables[x] == nn){
             pc += 2;
         }
-        //std::cout << "3NNN" << std::endl;
+        Serial.println("3000");
     }
 
     else if (first == 0x4000){
         if (variables[x] != nn){
             pc += 2;
         }
-        //std::cout << "4NNN" << std::endl;
+        Serial.println("4000");
     }
 
     else if (first == 0x5000){
         if (variables[x] == variables[y]){
             pc += 2;
         }
-        //std::cout << "5NNN" << std::endl;
+        Serial.println("5000");
     }
 
     else if (first == 0x9000){
         if (variables[x] != variables[y]){
             pc += 2;
         }
-        //std::cout << "9NNN" << std::endl;
+        Serial.println("9000");
     }
 
     else if (first == 0x7000){
         variables[x] += nn;
         //variables[x] &= 0xFF;
-        //std::cout << "7NNN" << std::endl;
+        Serial.println("7000");
     }
 
     else if (first == 0x8000){
@@ -234,7 +260,7 @@ void Emulator::Execute(){
     }
 
     else if (first == 0xC000){
-        uint8_t num = (rand() % 256);
+        uint8_t num = random(0, 256);
         variables[x] = num & nn;
         //std::cout << "C000" << std::endl;
     }
@@ -354,13 +380,9 @@ bool Emulator::SetPixel(int x, int y){
 
 void Emulator::Render(){
     //fill screen with black
-    #ifdef WINDOWS
-    ClearBackground(BLACK);
-    #endif
-
-    #ifdef MYARDUINO
-    display.clearDisplay();
-    #endif
+    //Serial.println("IN RENDER");
+    display->clearDisplay();
+    //Serial.println("HERE");
 
     for (unsigned int i = 0; i < 2048; i++){
         int x = i % width;
@@ -368,18 +390,11 @@ void Emulator::Render(){
 
         if (pixels[i] == 1){
             //draw pixels to the screen
-            #ifdef WINDOWS
-            DrawRectangle(x * widthScaleFactor, y * heightScaleFactor, 1 * widthScaleFactor, 1 * heightScaleFactor, WHITE);
-            #endif
-
-            #ifdef MYARDUINO
-            display.drawRect(x * widthScaleFactor, y * heightScaleFactor, 1 * widthScaleFactor, 1 * heightScaleFactor, 1);
-            #endif
+            display->drawRect(x * widthScaleFactor, y * heightScaleFactor, 1 * widthScaleFactor, 1 * heightScaleFactor, 1);
         }
     }
-    #ifdef MYARDUINO
-    display.display();
-    #endif
+    display->display();
+    //Serial.println("AFTER RENDER");
 }
 
 void Emulator::Draw(uint8_t x, uint8_t y){
@@ -401,59 +416,19 @@ void Emulator::Draw(uint8_t x, uint8_t y){
     }
 }
 
-#ifdef WINDOWS
-void Emulator::LoadFile(){
-    //for loading the file will need to be different for the microcontroller flash
-
-    std::ifstream file(rom, std::ios::binary | std::ios::ate);
-
-    if (file.is_open()){
-        std::streampos size = file.tellg();
-        char* buffer = new char[size];
-
-        file.seekg(0, std::ios::beg);
-        file.read(buffer, size);
-        file.close();
-
-        for (long i = 0; i < size; i++){
-            mem[0x200 + i] =  buffer[i];
-        }
-
-        delete[] buffer;
-    }
-}
-#endif
-
-#ifdef WINDOWS
-void Emulator::Run(){
-    SetTargetFPS(60);
-    
-
-    while (!WindowShouldClose()){
-        timer += GetFrameTime();
-
-        BeginDrawing();
-
-        if (timer > interval){
-
-            Cycle();
-            Render();
-
-            timer = 0.0f;
-        }
-
-        EndDrawing();
-    }
-}
-#endif
-
 //#ifdef MYARDUINO
 void Emulator::Run(){
     
     //update the timer
+    //Serial.println("IN RUN FUNCTION");
+    current = millis();
+    timer = current - start;
+    //Serial.println("AFTER TIME RUN FUNCTION");
 
     if (timer > interval){
-        timer = 0.0f;
+        //Serial.println("BEFORE CYCLE");
+        timer = 0UL;
+        start = current;
         Cycle();
         Render();
     }
@@ -461,13 +436,42 @@ void Emulator::Run(){
 //#endif
 
 void Emulator::ReadArduinoFile(){
-    //File file = SPIFFS.open(rom, "r");
+    SPIFFS.begin();
+    File file = SPIFFS.open(rom, "r");
+    if (!file){
+        Serial.println("Cannot open file");
+    }
+
+
+    Serial.println("FILE OPEN");
+    int size = file.size();
+    Serial.print("SIZE IS : ");
+    Serial.println(size);
+    
+    char* buffer = new char[size];
+    Serial.print("CONTENTS: ");
+    file.readBytes(buffer, (size_t)size);
+    for (int i = 0; i < size; i++){
+        Serial.println(buffer[i], HEX);
+    }
+    file.close();
+    
+
+    //Serial.println(buffer, HEX);
+
+    for (int i = 0; i < size; i++){
+        mem[0x200 + i] = buffer[i];
+    }
+    delete[] buffer;
+    //Serial.println("READ FILE");
 }
 
 void Emulator::PrintMem(){
     for (int i = 0; i < 4096; i++){
-        //std::cout << (int)mem[i] << ", ";
+        Serial.print(mem[i], HEX);
+        Serial.print(", ");
     }
+    Serial.println();
 }
 
 void Emulator::PrintPixels(){
