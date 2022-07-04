@@ -17,7 +17,7 @@ Emulator* emu;
 void setup(){
     Serial.begin(115200);
     delay(1000);
-    emu = new Emulator("/test_opcode.ch8");
+    emu = new Emulator("/PONG");
     //emu.PrintMem();
 }
 

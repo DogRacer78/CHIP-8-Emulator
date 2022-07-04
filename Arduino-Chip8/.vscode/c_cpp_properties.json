@@ -15,7 +15,9 @@
                 "C:/Program Files (x86)/Arduino/hardware/tools/avr/avr/include/**",
                 "C:/Users/doggi/AppData/Local/Arduino15/packages/esp8266/hardware/esp8266/2.7.2/tools/sdk/include/**",
                 "C:/Users/doggi/AppData/Local/Arduino15/packages/esp8266/tools/xtensa-lx106-elf-gcc/2.5.0-4-b40a506/xtensa-lx106-elf/include/",
-                "C:/Users/doggi/AppData/Local/Arduino15/**"
+                "C:/Users/doggi/AppData/Local/Arduino15/**",
+                "C:/Users/doggi/Documents/Arduino/libraries/ArduinoSTL/src/**",
+                "C:/Users/doggi/Documents/Arduino/libraries/Vector/src/**"
             ],
             "forcedInclude": [],
             "cStandard": "c17",
@@ -53,6 +55,7 @@
                 "C:\\Users\\doggi\\Documents\\Arduino\\libraries\\Adafruit_GFX_Library",
                 "C:\\Users\\doggi\\Documents\\Arduino\\libraries\\Adafruit_BusIO",
                 "C:\\Users\\doggi\\Documents\\Arduino\\libraries\\Adafruit_SH110X",
+                "C:\\Users\\doggi\\Documents\\Arduino\\libraries\\IRremote\\src",
                 "c:\\users\\doggi\\appdata\\local\\arduino15\\packages\\esp8266\\tools\\xtensa-lx106-elf-gcc\\2.5.0-4-b40a506\\xtensa-lx106-elf\\include\\c++\\4.8.2",
                 "c:\\users\\doggi\\appdata\\local\\arduino15\\packages\\esp8266\\tools\\xtensa-lx106-elf-gcc\\2.5.0-4-b40a506\\xtensa-lx106-elf\\include\\c++\\4.8.2\\xtensa-lx106-elf",
                 "c:\\users\\doggi\\appdata\\local\\arduino15\\packages\\esp8266\\tools\\xtensa-lx106-elf-gcc\\2.5.0-4-b40a506\\xtensa-lx106-elf\\include\\c++\\4.8.2\\backward",

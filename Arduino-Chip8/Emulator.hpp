@@ -1,13 +1,15 @@
 //#include <stdint.h>
 //#include <vector>
-#ifndef MyClass_h
-#define MyClass_h
+#ifndef EMU
+#define EMU
 #include <Arduino.h>
 #include <SPI.h>
 #include <Wire.h>
 
 #include <Adafruit_GFX.h> // The graphics library
 #include <Adafruit_SH110X.h>  // The driver for the specific OLED display
+
+#define TOTAL_REMOTE_KEYS 16
 // code goes here
 
 class Emulator{
@@ -23,6 +25,7 @@ class Emulator{
         void PrintMem();
         void PrintPixels();
         void ReadArduinoFile();
+        void GetAllRomNames();
 
     private:
         int width = 64, height = 32;
@@ -55,7 +58,12 @@ class Emulator{
 
         Adafruit_SH1106G* display;
 
-        
+        //keys
+        uint8_t keys[TOTAL_REMOTE_KEYS][3] = { {0x44, 0, 0xF}, {0x7, 0, 0xC}, {0x15, 0, 0xD}, {0x9, 0, 0xE}, {0x16, 0, 0x0}, {0x19, 0, 0xA}, 
+        {0xD, 0, 0xB}, {0xC, 0, 0x1}, {0x18, 0, 0x2}, {0x5E, 0, 0x3}, {0x8, 0, 0x4}, {0x1C, 0, 0x5}, {0x5A, 0, 0x6}, {0x42, 0, 0x7}, {0x52, 0, 0x8}, {0x4A, 0, 0x9} };
+
+        const char* romsInMemory[4];
+
 
         uint8_t font[80] = 
         {

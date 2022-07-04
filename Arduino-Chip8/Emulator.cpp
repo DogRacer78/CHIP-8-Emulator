@@ -8,6 +8,8 @@
 #include <Adafruit_GFX.h> // The graphics library
 #include <Adafruit_SH110X.h>  // The driver for the specific OLED display
 
+#include <IRremote.hpp>
+
 Emulator::Emulator(const char *fname){
     //placing font in memory
 
@@ -29,8 +31,17 @@ Emulator::Emulator(const char *fname){
 
     display = new Adafruit_SH1106G((uint16_t)128, (uint16_t)64, &Wire, -1);
 
+    IrReceiver.begin(2, true);
+    Serial.print("Ready to receive IR signals of protocols: ");
+    printActiveIRProtocols(&Serial);
+    Serial.print("at pin ");
+    Serial.print(2);
+    Serial.println();
+
     rom = fname;
     Serial.println("BEFORE FILE READ");
+    SPIFFS.begin();
+
     //File file = SPIFFS.open("/IBM Logo.ch8", "r");
     //Serial.println(file.size());
     ReadArduinoFile();
@@ -47,8 +58,8 @@ void Emulator::Cycle(){
     //Serial.println("IN CYCLE");
     for (int i = 0; i < speed; i++){
         opcode = ((mem[pc] << 8u) | mem[pc + (uint16_t)1]);
-        Serial.print("PC IS: ");
-        Serial.println(pc, HEX);
+        //Serial.print("PC IS: ");
+        //Serial.println(pc, HEX);
         pc += (uint16_t)2;
 
         Execute();
@@ -74,29 +85,29 @@ void Emulator::Execute(){
 
     //std::cout << std::dec << "PC ******************************************* " << pc << std::endl;
     //std::cout << std::hex << "FIRST " << first << std::endl; 
-    Serial.print("****************************** ");
-    Serial.println(pc, HEX);
-
-    Serial.print("OPCODE :");
-    Serial.println(opcode, HEX);
-
-    Serial.print("FIRST: ");
-    Serial.println(first, HEX);
-
-    Serial.print("nnn: ");
-    Serial.println(nnn, HEX);
-
-    Serial.print("nn: ");
-    Serial.println(nn, HEX);
-
-    Serial.print("n: ");
-    Serial.println(n, HEX);
-
-    Serial.print("x: ");
-    Serial.println(x, HEX);
-
-    Serial.print("y: ");
-    Serial.println(y, HEX);
+    //Serial.print("****************************** ");
+    //Serial.println(pc, HEX);
+//
+    //Serial.print("OPCODE :");
+    //Serial.println(opcode, HEX);
+//
+    //Serial.print("FIRST: ");
+    //Serial.println(first, HEX);
+//
+    //Serial.print("nnn: ");
+    //Serial.println(nnn, HEX);
+//
+    //Serial.print("nn: ");
+    //Serial.println(nn, HEX);
+//
+    //Serial.print("n: ");
+    //Serial.println(n, HEX);
+//
+    //Serial.print("x: ");
+    //Serial.println(x, HEX);
+//
+    //Serial.print("y: ");
+    //Serial.println(y, HEX);
 
     if (opcode == 0xE0){
         for (int i = 0; i < 2048; i++){
@@ -105,74 +116,74 @@ void Emulator::Execute(){
         display->clearDisplay();
         display->display();
         //std::cout << "Clear screen" << std::endl;
-        Serial.println("Clear Screen");
+        //Serial.println("Clear Screen");
     }
     else if (first == 0x1000){
         pc = nnn;
-        Serial.println("1000");
+        //Serial.println("1000");
     }
 
     else if (first == 0x6000){
         variables[x] = nn;
-        Serial.println("6000");
+        //Serial.println("6000");
     }
     
     else if (first == 0xA000){
         indexReg = nnn;
-        Serial.println("A000");
+        //Serial.println("A000");
     }
 
     else if (first == 0xD000){
         //draw instructio
         Draw(x, y);
-        Serial.println("D000");
+        //Serial.println("D000");
     }
 
     else if (first == 0x2000){
         stack[sp] = pc;
         ++sp;
         pc = nnn;
-        Serial.println("2000");
+        //Serial.println("2000");
     }
 
     else if (first == 0x0000){
         --sp;
         pc = stack[sp];
-        Serial.println("00EE");
+        //Serial.println("00EE");
     }
 
     else if (first == 0x3000){
         if (variables[x] == nn){
             pc += 2;
         }
-        Serial.println("3000");
+        //Serial.println("3000");
     }
 
     else if (first == 0x4000){
         if (variables[x] != nn){
             pc += 2;
         }
-        Serial.println("4000");
+        //Serial.println("4000");
     }
 
     else if (first == 0x5000){
         if (variables[x] == variables[y]){
             pc += 2;
         }
-        Serial.println("5000");
+        //Serial.println("5000");
     }
 
     else if (first == 0x9000){
         if (variables[x] != variables[y]){
             pc += 2;
         }
-        Serial.println("9000");
+        //Serial.println("9000");
     }
 
     else if (first == 0x7000){
         variables[x] += nn;
         //variables[x] &= 0xFF;
-        Serial.println("7000");
+        //Serial.println("7000");
     }
 
     else if (first == 0x8000){
@@ -269,11 +280,25 @@ void Emulator::Execute(){
         switch (nn)
         {
         case 0x9E:
-            //key pressed code
+            for (int i = 0; i < TOTAL_REMOTE_KEYS; i++){
+                if (keys[i][2] == variables[x]){
+                    if (keys[i][1] == 0x01){
+                        pc += 2;
+                    }
+                    break;
+                }
+            }
             break;
 
         case 0xA1:
-            //keys pressed code
+            for (int i = 0; i < TOTAL_REMOTE_KEYS; i++){
+                if (keys[i][2] == variables[x]){
+                    if (keys[i][1] == 0x00){
+                        pc += 2;
+                    }
+                    break;
+                }
+            }
             break;
         
         default:
@@ -305,7 +330,20 @@ void Emulator::Execute(){
             break;
 
         case 0x0A:
-            //key code
+        {
+            bool pressed = false;
+            for (int i = 0; i < TOTAL_REMOTE_KEYS; i++){
+                if (keys[i][1] == 0x01){
+                    variables[x] = keys[i][2];
+                    pressed = true;
+                    break;
+                }
+            }
+
+            if (!pressed){
+                pc -= 2;
+            }
+        }
             break;
 
         case 0x29:
@@ -425,6 +463,32 @@ void Emulator::Run(){
     timer = current - start;
     //Serial.println("AFTER TIME RUN FUNCTION");
 
+    if (IrReceiver.decode()){
+        IrReceiver.resume();
+        int remoteKeyPressed = -1;
+
+        //check if power button pressed to change program
+
+        
+
+        for (int i = 0; i < TOTAL_REMOTE_KEYS; i++){
+            keys[i][1] = 0;
+
+            if (remoteKeyPressed == -1){
+                if (IrReceiver.decodedIRData.command == keys[i][0]){
+                    Serial.print("Key pressed ");
+                    Serial.println(keys[i][0], HEX);
+                    remoteKeyPressed = i;
+                    break;
+                }
+            }
+        }
+
+        if (remoteKeyPressed > -1){
+            keys[remoteKeyPressed][1] = 0x01;
+        }
+    }
+
     if (timer > interval){
         //Serial.println("BEFORE CYCLE");
         timer = 0UL;
@@ -436,7 +500,6 @@ void Emulator::Run(){
 //#endif
 
 void Emulator::ReadArduinoFile(){
-    SPIFFS.begin();
     File file = SPIFFS.open(rom, "r");
     if (!file){
         Serial.println("Cannot open file");
@@ -478,4 +541,8 @@ void Emulator::PrintPixels(){
     for (int i = 0; i < 64 * 32; i++){
         //std::cout << pixels[i] << ", ";
     }
+}
+
+void Emulator::GetAllRomNames(){
+    
 }
